@@ -8,19 +8,6 @@ from pathlib import Path
 
 DB_PATH = Path(__file__).parents[1] / "db"
 
-@tool
-def multiply(a: float, b: float) -> float:
-    """Multiply a * b and returns the result
-
-    Args:
-        a: float multiplicand
-        b: float multiplier
-
-    Returns:
-        the resulting float of the equation a * b
-    """
-    return a * b
-
 
 @tool
 def triagem(cpf: str, data_nascimento: str) -> dict:
