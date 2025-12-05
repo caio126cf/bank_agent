@@ -10,7 +10,7 @@ https://github.com/luizomf/react_agent_langgraph_course
 
 ## 📌 Visão Geral do Projeto
 
-O objetivo do projeto é simular um **agente bancário inteligente**, seguindo regras fortes de atendimento e tomando decisões com base nas interações do cliente.
+O objetivo do projeto é criar um **agente bancário inteligente**, seguindo regras fortes de atendimento e tomando decisões com base nas interações do cliente.
 
 Funcionalidades principais:
 
