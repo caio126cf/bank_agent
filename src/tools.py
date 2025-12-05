@@ -6,6 +6,8 @@ from datetime import datetime
 from langchain.tools import BaseTool, tool
 from pathlib import Path
 
+DB_PATH = Path(__file__).parents[1] / "db"
+
 @tool
 def multiply(a: float, b: float) -> float:
     """Multiply a * b and returns the result
@@ -21,7 +23,7 @@ def multiply(a: float, b: float) -> float:
 
 
 @tool
-def authenticate_user(cpf: str, data_nascimento: str) -> dict:
+def triagem(cpf: str, data_nascimento: str) -> dict:
     """Autentica um usuário consultando o banco de dados CSV com CPF e data de nascimento
 
     Args:
@@ -33,13 +35,13 @@ def authenticate_user(cpf: str, data_nascimento: str) -> dict:
     """
     try:
         # Caminho do arquivo CSV
-        csv_path = Path(__file__).parent / "users.csv"
+        users_path = DB_PATH / "users.csv"
         
-        if not csv_path.exists():
+        if not users_path.exists():
             return {"sucesso": False, "mensagem": "Arquivo de usuários não encontrado"}
         
         # Ler o CSV
-        with open(csv_path, "r", encoding="utf-8") as f:
+        with open(users_path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
                 if row["cpf"] == cpf and row["data_nascimento"] == data_nascimento:
@@ -110,7 +112,7 @@ def quote_currency(from_currency: str = "USD", to_currency: str = "BRL") -> dict
 
 @tool
 def solicitar_aumento_limite(cpf: str, novo_limite_solicitado: float) -> dict:
-    """Registra e processa solicitação de aumento de limite.
+    """Registra e processa solicitação de Alteração de Limite.
 
     Fluxo:
     - Busca conta em `accounts.csv` (obtém `limite_atual` e `score`).
@@ -128,19 +130,17 @@ def solicitar_aumento_limite(cpf: str, novo_limite_solicitado: float) -> dict:
         dict com resultado, status final e mensagens amigáveis.
     """
     try:
+        users_path = DB_PATH / "users.csv"
+        score_table_path = DB_PATH / "score_limite.csv"
+        solicitacoes_path = DB_PATH / "solicitacoes_aumento_limite.csv"
         # base = Path(__file__).parent
         # users_path = base / "users.csv"
         # score_table_path = base / "score_limite.csv"
         # solicitacoes_path = base / "solicitacoes_aumento_limite.csv"
 
-        users_path = Path("users.csv")
-        score_table_path = Path("score_limite.csv")
-        solicitacoes_path = Path("solicitacoes_aumento_limite.csv")
-
-
-        # Buscar dados da conta em users.csv
         if not users_path.exists():
             return {"success": False, "message": "Arquivo users.csv não encontrado"}
+        
 
         conta = None
         with open(users_path, "r", encoding="utf-8") as f:
@@ -248,5 +248,162 @@ def solicitar_aumento_limite(cpf: str, novo_limite_solicitado: float) -> dict:
         return {"success": False, "message": f"Erro ao processar solicitação: {str(e)}"}
 
 
-TOOLS: list[BaseTool] = [multiply, authenticate_user, quote_currency, solicitar_aumento_limite]
+@tool
+def recalcular_score(
+    cpf: str,
+    renda_mensal: float,
+    tipo_emprego: str,
+    despesas_fixas: float,
+    num_dependentes: int,
+    tem_dividas: str
+) -> dict:
+    """Recalcula o score do cliente.
+
+    Responsabilidades:
+    1. Recebe dados financeiros do cliente (renda, emprego, despesas, dependentes, dívidas).
+    2. Calcula novo score de crédito usando fórmula ponderada (0 a 1000).
+    3. Atualiza o score na base de dados (users.csv).
+    4. Retorna resultado com novo score e redirecionamento ao Agente de Crédito.
+
+    Fórmula de Score (ponderada):
+    score = (
+        (renda_mensal / (despesas_fixas + 1)) * peso_renda +
+        peso_emprego[tipo_emprego] +
+        peso_dependentes[num_dependentes] +
+        peso_dividas[tem_dividas]
+    )
+
+    Args:
+        cpf: CPF do cliente (string, 11 dígitos)
+        renda_mensal: renda mensal em reais (float)
+        tipo_emprego: tipo de emprego ("formal", "autônomo", "desempregado")
+        despesas_fixas: despesas fixas mensais em reais (float)
+        num_dependentes: número de dependentes (int: 0, 1, 2, 3+)
+        tem_dividas: se possui dívidas ativas ("sim", "não")
+
+    Returns:
+        dict com sucesso, novo_score, score_anterior, mensagem e redirecionamento.
+    """
+    try:
+        users_path = DB_PATH / "users.csv"
+
+        if not users_path.exists():
+            return {"success": False, "message": "Arquivo users.csv não encontrado"}
+
+        # Pesos da fórmula
+        peso_renda = 30
+        peso_emprego = {
+            "formal": 300,
+            "autônomo": 200,
+            "desempregado": 0
+        }
+        peso_dependentes = {
+            0: 100,
+            1: 80,
+            2: 60,
+            "3+": 30
+        }
+        peso_dividas = {
+            "sim": -100,
+            "não": 100
+        }
+
+        # Validar tipo de emprego
+        if tipo_emprego.lower() not in peso_emprego:
+            return {
+                "success": False,
+                "message": f"Tipo de emprego inválido. Use: formal, autônomo ou desempregado"
+            }
+
+        # Validar tem_dividas
+        if tem_dividas.lower() not in peso_dividas:
+            return {
+                "success": False,
+                "message": "Resposta sobre dívidas inválida. Use: sim ou não"
+            }
+
+        # Validar num_dependentes e mapear para a chave correta
+        if num_dependentes < 0:
+            return {
+                "success": False,
+                "message": "Número de dependentes não pode ser negativo"
+            }
+        
+        dependentes_key = "3+" if num_dependentes >= 3 else num_dependentes
+
+        # Validar renda e despesas
+        if renda_mensal < 0 or despesas_fixas < 0:
+            return {
+                "success": False,
+                "message": "Renda e despesas não podem ser negativas"
+            }
+
+        # Calcular novo score
+        relacao_renda_despesa = renda_mensal / (despesas_fixas + 1)
+        novo_score = int(
+            (relacao_renda_despesa * peso_renda) +
+            peso_emprego[tipo_emprego.lower()] +
+            peso_dependentes[dependentes_key] +
+            peso_dividas[tem_dividas.lower()]
+        )
+
+        # Limitar score entre 0 e 1000
+        novo_score = max(0, min(1000, novo_score))
+
+        # Buscar score anterior e atualizar users.csv
+        score_anterior = None
+        all_users = []
+        fieldnames = ["cpf", "data_nascimento", "nome", "limite_atual", "score"]
+
+        with open(users_path, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if row["cpf"] == cpf:
+                    score_anterior = int(row.get("score", 0))
+                    row["score"] = str(novo_score)
+                all_users.append(row)
+
+        if score_anterior is None:
+            return {
+                "success": False,
+                "message": f"Cliente com CPF {cpf} não encontrado na base de dados"
+            }
+
+        # Escrever dados atualizados
+        with open(users_path, "w", encoding="utf-8", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(all_users)
+
+        # Calcular mudança de score
+        diferenca_score = novo_score - score_anterior
+
+        return {
+            "success": True,
+            "cpf": cpf,
+            "score_anterior": score_anterior,
+            "novo_score": novo_score,
+            "diferenca_score": diferenca_score,
+            "renda_mensal": renda_mensal,
+            "tipo_emprego": tipo_emprego,
+            "despesas_fixas": despesas_fixas,
+            "num_dependentes": num_dependentes,
+            "tem_dividas": tem_dividas,
+            "message": f"Entrevista de crédito realizada com sucesso. Score atualizado de {score_anterior} para {novo_score}",
+            "closing_message": "Obrigado por participar da entrevista. Você será redirecionado ao Agente de Crédito para análise de sua solicitação."
+        }
+
+    except Exception as e:
+        return {"success": False, "message": f"Erro ao processar entrevista de crédito: {str(e)}"}
+
+@tool
+def encerrar_conversa() -> dict:
+    """Encerra a conversa."""
+    try:
+        return {"success": True, "message": "Conversa encerrada com sucesso."}
+    except Exception as e:
+        return {"success": False, "message": f"Falha ao encerrar a conversa: {str(e)}"}
+
+
+TOOLS: list[BaseTool] = [multiply, triagem, quote_currency, solicitar_aumento_limite, recalcular_score, encerrar_conversa]
 TOOLS_BY_NAME: dict[str, BaseTool] = {tool.name: tool for tool in TOOLS}

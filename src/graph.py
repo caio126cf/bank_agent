@@ -8,20 +8,20 @@ from langgraph.constants import START
 from langgraph.graph.state import CompiledStateGraph, StateGraph
 from pydantic import ValidationError
 
-from examples.ex006.state import State
-from examples.ex006.tools import TOOLS, TOOLS_BY_NAME
-from examples.ex006.utils import load_llm
+from state import State
+from tools import TOOLS, TOOLS_BY_NAME
+from utils import load_llm
 
 
 def call_llm(state: State) -> State:
-    print("> call llm")
+    # print("> call llm")
     llm_with_tools = load_llm().bind_tools(TOOLS)
     result = llm_with_tools.invoke(state["messages"])
     return {"messages": [result]}
 
 
 def tool_node(state: State) -> State:
-    print("> tool node")
+    # print("> tool node")
     llm_response = state["messages"][-1]
 
     if not isinstance(llm_response, AIMessage) or not getattr(
@@ -45,7 +45,7 @@ def tool_node(state: State) -> State:
 
 
 def router(state: State) -> Literal["tool_node", "__end__"]:
-    print("> router")
+    # print("> router")
     llm_response = state["messages"][-1]
 
     if getattr(llm_response, "tool_calls", None):

@@ -4,7 +4,10 @@ version = "0.0.1"
 description = "react_agent"
 readme = "README.md"
 license = "MIT"
-authors = [{ name = "Luiz Otávio" }]
+authors = [
+    { name = "Luiz Otávio" },
+    { name = "Caio Oliveira" }
+]
 requires-python = ">=3.13"
 dependencies = [
   "langchain>=1.0.8",

@@ -10,12 +10,8 @@ from langchain_ollama import ChatOllama
     # return init_chat_model("gemini-2.0-flash-lite", api_key=api_key)
 
 def load_llm() -> BaseChatModel:
-    """
-    Carrega o modelo Mistral rodando localmente no Ollama.
-    Não usa API key.
-    """
     return ChatOllama(
-        model="mistral",
+        model="gpt-oss:20b",
         base_url="http://localhost:11434",  # padrão do Ollama
         temperature=0.2,
     )
