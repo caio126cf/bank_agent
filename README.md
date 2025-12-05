@@ -113,6 +113,12 @@ Quando o programa termina, a memória é liberada.
 - Controlar limites de tentativas sem perder o estado.
 - Organizar o loop `llm → tool → llm` e permitir uma saída ao encerrar.
 
+- **Criar interface UserFriendly**
+  Precisaria de mais um dia ou dois para entender como o Streamlit funciona e implementar no projeto atual. Pretendo também adicionar essa feature.
+
+  **Solução atual:**  
+  A interação é via terminal com uma estilização básica via python.
+
 ---
 
 ## 🔧 Escolhas Técnicas & Justificativas
@@ -133,14 +139,11 @@ Controla o fluxo enquanto o grafo ainda está simples.
 
 ---
 
-### Tutorial de Execução
-
-### 🚀 Instalação do Ollama e configuração do modelo gpt-oss:20b (Windows)  
+### 🚀 Tutorial de Execução
 
 Este projeto roda **totalmente offline**, utilizando o **Ollama** como servidor local de modelos. Não exclusivamente, no arquivo utils.py podemos consumir uma LLM hospedada em cloud.
-Siga os passos abaixo para instalar o Ollama no Windows e baixar o modelo necessário.
+Siga os passos abaixo para instalar o Ollama no Windows, baixar e rodar o modelo necessário, instalar e sincronizar o uv. Por fim, rodar o projeto.
 
----
 
 ### 🔧 1. Instale o Ollama (Windows)
 
@@ -194,3 +197,5 @@ Com o uv instalado e sincronizado, rode:
 ```bash
 uv run src/main.py
 ```
+
+---
