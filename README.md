@@ -46,7 +46,7 @@ O fluxo é cíclico:
 
 START → call_llm → (router) → tool_node → call_llm → ... → END
 
-![Imagem de fluxo graph](assets\graph.png)
+![Imagem de fluxo graph](assets/graph.png)
 
 ### **2. Prompt Engineering**
 Grande parte do comportamento do agente vem do `SYSTEM_PROMPT` em `prompt.py` (arquivo singular):
