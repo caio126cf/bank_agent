@@ -42,16 +42,11 @@ Usado para padronizar o fluxo, mas não controlar as decisões:
 - `tool_node` → executa ferramentas solicitadas pelo LLM  
 - `router` → verifica se há tool_call e encerrar caso não tenha
 
-graph TB
-    START[START] --> CALL_LLM[call_llm]
-    CALL_LLM --> ROUTER{router}
-    ROUTER -->|tem tool_calls| TOOL_NODE[tool_node]
-    ROUTER -->|não tem| END[__end__]
-    TOOL_NODE --> CALL_LLM
-
 O fluxo é cíclico:
 
 START → call_llm → (router) → tool_node → call_llm → ... → END
+
+![Imagem de fluxo graph](assets\fluxo graph.png)
 
 ### **2. Prompt Engineering**
 Grande parte do comportamento do agente vem do `SYSTEM_PROMPT` em `prompt.py` (arquivo singular):
