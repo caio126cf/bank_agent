@@ -6,7 +6,7 @@
 
 ## Link testando o Assistente
 
-O vídeo foi levemente editado, como rodei consumi o gpt
+O vídeo foi levemente editado para tornar mais dinâmico o teste. Como a LLM estava rodando localmente, a conversa completa durou em torno de 12 minutos.
 
 https://youtu.be/EMrnbtZROLM
 
