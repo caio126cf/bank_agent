@@ -3,7 +3,6 @@ from langgraph.graph.state import RunnableConfig
 from rich import print
 from rich.markdown import Markdown
 from rich.prompt import Prompt
-
 from graph import build_graph
 from prompts import SYSTEM_PROMPT
 
@@ -38,6 +37,7 @@ def main() -> None:
         all_messages = result["messages"]
 
     print(all_messages)
+    # print(graph.get_graph().draw_mermaid())\
 
 
 if __name__ == "__main__":

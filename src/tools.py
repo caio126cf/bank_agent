@@ -392,5 +392,5 @@ def encerrar_conversa() -> dict:
         return {"success": False, "message": f"Falha ao encerrar a conversa: {str(e)}"}
 
 
-TOOLS: list[BaseTool] = [multiply, triagem, quote_currency, solicitar_aumento_limite, recalcular_score, encerrar_conversa]
+TOOLS: list[BaseTool] = [triagem, quote_currency, solicitar_aumento_limite, recalcular_score, encerrar_conversa]
 TOOLS_BY_NAME: dict[str, BaseTool] = {tool.name: tool for tool in TOOLS}
